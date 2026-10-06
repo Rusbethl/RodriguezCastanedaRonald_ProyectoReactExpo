@@ -16,4 +16,5 @@ export const colores = {
   texto: '#1D2A25',
   textoSecundario: '#6F7A74',
   borde: '#E6DCC8',
+  ambar: '#F2B441', // estado en pausa
 };

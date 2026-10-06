@@ -5,3 +5,4 @@
  */
 export { colores } from './colores';
 export { espaciado, radios, alturas } from './espaciado';
+export { fuentes, texto } from './tipografia';

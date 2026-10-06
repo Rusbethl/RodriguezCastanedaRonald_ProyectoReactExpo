@@ -17,6 +17,23 @@ npx expo start
 
 Escanea el código QR con Expo Go. El celular y la computadora deben estar en la misma red Wi-Fi.
 
+### Conectar con la API
+
+En el celular `localhost` apunta al propio celular, no a la computadora. Por eso:
+
+1. Saca la IP de tu computadora con `ipconfig` (dirección IPv4, por ejemplo `192.168.1.70`).
+2. En el archivo `.env` pon `EXPO_PUBLIC_API_URL=http://192.168.1.70:8000/api`.
+3. Corre el backend escuchando en toda la red: `python manage.py runserver 0.0.0.0:8000`.
+4. Reinicia Expo con `npx expo start -c` para que tome el cambio.
+
+Para probar en el navegador de la computadora: `npx expo start --web` (ahí sí funciona `localhost`).
+
+Usuario de prueba (se crea con `python manage.py cargar_demo`): `demo@focussync.app` / `FocusSync2026`.
+
+### Cómo se mide el uso del celular
+
+Expo Go no permite leer las estadísticas de uso de otras apps. La app usa `AppState`: cada vez que sales de FocusSync durante una sesión cuenta como un desbloqueo y el tiempo fuera se suma al tiempo en el celular. Al terminar, el usuario puede corregir el tiempo y marcar qué apps usó.
+
 ## Estructura del proyecto
 
 ```
@@ -39,7 +56,7 @@ Escanea el código QR con Expo Go. El celular y la computadora deben estar en la
 ## Estado
 
 - [x] Estructura inicial, tema visual y cliente de la API
-- [ ] Navegación con React Navigation
-- [ ] Inicio de sesión y registro
-- [ ] Sesiones de estudio y medición del celular
-- [ ] Historial, análisis, metas, notificaciones y logros
+- [x] Navegación con React Navigation (pila de login y barra inferior)
+- [x] Inicio de sesión, registro en dos pasos y cierre de sesión
+- [x] Sesiones de estudio con cronómetro, pausas y medición del celular
+- [x] Historial, materias, análisis semanal, metas, notificaciones, logros y configuración

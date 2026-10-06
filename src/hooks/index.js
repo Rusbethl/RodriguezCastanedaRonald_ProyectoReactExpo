@@ -1,6 +1,6 @@
 /**
  * Carpeta 'hooks': lógica reutilizable con estado que no es visual.
- * Aquí irán, por ejemplo, useCronometro (para la Sesión activa) y useTiempoPantalla
- * (para medir el uso del celular), de modo que las pantallas solo muestren los datos.
+ * Separarla deja a las pantallas solo con la parte de mostrar datos.
  */
-export {};
+export { default as useDatos } from './useDatos';
+export { default as useMedicionCelular } from './useMedicionCelular';

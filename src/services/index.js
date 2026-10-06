@@ -3,4 +3,6 @@
  * componentes y pantallas limpios. Una pantalla nunca usa fetch directamente;
  * pide los datos a un servicio (auth, sesiones, materias, metas...).
  */
-export { API_URL, guardarToken, peticion } from './api';
+export { API_URL, registrarAvisosDeSesion, configurarTokens, peticion } from './api';
+export * as almacenamiento from './almacenamiento';
+export * from './focussync';

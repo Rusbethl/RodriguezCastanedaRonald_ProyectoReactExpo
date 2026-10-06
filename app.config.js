@@ -45,6 +45,9 @@ export default {
       favicon: './assets/favicon.png',
     },
 
+    // Plugins nativos: guardar el token de forma cifrada y cargar la tipografía Poppins.
+    plugins: ['expo-secure-store', 'expo-font'],
+
     // 'extra' expone valores al código mediante expo-constants.
     // La URL del backend (Django REST Framework) se toma del archivo .env para no
     // dejar la IP de la computadora de desarrollo escrita en el repositorio.

@@ -1,33 +1,78 @@
 /**
  * Contexto de autenticación.
  *
- * Guarda quién es el usuario y su token para que cualquier pantalla pueda saber
- * si hay sesión iniciada. Por ahora solo define la estructura; el login real
- * contra /api/auth/login/ se conectará en la siguiente entrega.
+ * Guarda quién es el usuario y sus tokens para que cualquier pantalla sepa si hay
+ * sesión iniciada. Al abrir la app intenta restaurar la sesión guardada en el
+ * celular, así el usuario no tiene que escribir su contraseña cada vez.
  */
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { guardarToken } from '../services';
+import { almacenamiento, auth, configurarTokens, registrarAvisosDeSesion } from '../services';
 
 const AuthContext = createContext(null);
+const CLAVE_ACCESS = 'focussync_access';
+const CLAVE_REFRESH = 'focussync_refresh';
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  // true justo después de registrarse, para llevar al usuario a completar su perfil (paso 2)
+  const [esNuevo, setEsNuevo] = useState(false);
+
+  const guardarTokens = useCallback(async ({ access, refresh }) => {
+    configurarTokens({ access, refresh });
+    await almacenamiento.guardar(CLAVE_ACCESS, access);
+    await almacenamiento.guardar(CLAVE_REFRESH, refresh);
+  }, []);
+
+  const cerrarSesion = useCallback(async () => {
+    configurarTokens({ access: null, refresh: null });
+    await almacenamiento.guardar(CLAVE_ACCESS, null);
+    await almacenamiento.guardar(CLAVE_REFRESH, null);
+    setUsuario(null);
+  }, []);
+
+  // Restaurar la sesión guardada al abrir la app
+  useEffect(() => {
+    registrarAvisosDeSesion({ alRenovar: guardarTokens, alExpirar: cerrarSesion });
+    (async () => {
+      try {
+        const access = await almacenamiento.leer(CLAVE_ACCESS);
+        const refresh = await almacenamiento.leer(CLAVE_REFRESH);
+        if (refresh) {
+          configurarTokens({ access, refresh });
+          setUsuario(await auth.yo());
+        }
+      } catch {
+        await cerrarSesion();
+      } finally {
+        setCargando(false);
+      }
+    })();
+  }, [guardarTokens, cerrarSesion]);
 
   const valor = useMemo(
     () => ({
       usuario,
-      haySesion: Boolean(usuario),
-      iniciarSesion: (datosUsuario, token) => {
-        guardarToken(token);
-        setUsuario(datosUsuario);
+      cargando,
+      esNuevo,
+      iniciarSesion: async (email, password) => {
+        const datos = await auth.login(email, password);
+        await guardarTokens(datos);
+        setEsNuevo(false);
+        setUsuario(datos.usuario);
       },
-      cerrarSesion: () => {
-        guardarToken(null);
-        setUsuario(null);
+      registrarse: async (datosRegistro) => {
+        const datos = await auth.registro(datosRegistro);
+        await guardarTokens(datos);
+        setEsNuevo(true);
+        setUsuario(datos.usuario);
       },
+      terminarRegistro: () => setEsNuevo(false),
+      recargarUsuario: async () => setUsuario(await auth.yo()),
+      cerrarSesion,
     }),
-    [usuario],
+    [usuario, cargando, esNuevo, guardarTokens, cerrarSesion],
   );
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
