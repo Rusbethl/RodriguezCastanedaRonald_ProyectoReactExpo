@@ -71,3 +71,21 @@ export function reloj(segundos) {
   const r = String(s % 60).padStart(2, '0');
   return h ? `${h}:${m}:${r}` : `${m}:${r}`;
 }
+
+/**
+ * Distancia en metros entre dos puntos { latitude, longitude } (fórmula de Haversine).
+ * 6 371 000 m es el radio medio de la Tierra.
+ */
+export function distanciaMetros(a, b) {
+  const aRad = (grados) => (grados * Math.PI) / 180;
+  const dLat = aRad(b.latitude - a.latitude);
+  const dLon = aRad(b.longitude - a.longitude);
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(aRad(a.latitude)) * Math.cos(aRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.sqrt(h));
+}
+
+/** 85.4 -> "85 m", 1530 -> "1.53 km" */
+export function formatearDistancia(metros) {
+  return metros < 1000 ? `${Math.round(metros)} m` : `${(metros / 1000).toFixed(2)} km`;
+}

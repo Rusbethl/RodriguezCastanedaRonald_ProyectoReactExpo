@@ -4,11 +4,13 @@
  * dispositivos (/api/dispositivos/) y cerrar sesión.
  */
 import { Feather } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { Cargando, Encabezado, MensajeError, Pantalla, Tarjeta } from '../components';
+import { Cargando, DialogoConfirmacion, Encabezado, MensajeError, Pantalla, Tarjeta } from '../components';
 import { useAuth } from '../context';
 import { useDatos } from '../hooks';
+import { useNotificaciones } from '../notificaciones';
 import { configuracion as configApi, dispositivos as dispApi } from '../services';
 import { colores, fuentes } from '../theme';
 
@@ -22,6 +24,10 @@ const ICONO_DISPOSITIVO = { celular: 'smartphone', tablet: 'tablet', laptop: 'mo
 
 export default function ConfiguracionScreen() {
   const { cerrarSesion } = useAuth();
+  const { avisar, notificar, cancelarTodas, setActivas, pedirPermiso, permiso } = useNotificaciones();
+  // confirmandoSalida: el diálogo está abierto; saliendo: ya se está cerrando la sesión
+  const [confirmandoSalida, setConfirmandoSalida] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
   const { datos, setDatos, error, cargando, recargar } = useDatos(async () => {
     const [config, dispositivos] = await Promise.all([configApi.obtener(), dispApi.listar()]);
     return { config, dispositivos };
@@ -33,6 +39,7 @@ export default function ConfiguracionScreen() {
   const { config, dispositivos } = datos;
   const actualizar = async (cambios) => {
     setDatos({ ...datos, config: { ...config, ...cambios } }); // respuesta inmediata en pantalla
+    if ('notificaciones_activas' in cambios) setActivas(cambios.notificaciones_activas);
     const guardada = await configApi.actualizar(cambios);
     setDatos((d) => ({ ...d, config: guardada }));
   };
@@ -48,6 +55,28 @@ export default function ConfiguracionScreen() {
   const quitar = async (id) => {
     await dispApi.eliminar(id);
     setDatos({ ...datos, dispositivos: dispositivos.filter((d) => d.id !== id) });
+  };
+
+  // Flujo de "Cerrar sesión":
+  // 1) el botón solo abre el diálogo; 2) Cancelar lo cierra y la sesión sigue activa;
+  // 3) solo confirmarSalida llama a cerrarSesion(), así no se puede salir sin confirmar.
+  const pedirConfirmacionSalida = () => setConfirmandoSalida(true);
+  const cancelarSalida = () => {
+    setConfirmandoSalida(false);
+    avisar({ tipo: 'info', titulo: 'Sigues con tu sesión iniciada' });
+  };
+  const confirmarSalida = async () => {
+    setSaliendo(true);
+    await cancelarTodas(); // por ejemplo, el aviso del fin de una sesión de estudio en curso
+    await cerrarSesion();
+    avisar({ tipo: 'exito', titulo: 'Cerraste sesión' });
+  };
+
+  const probarNotificacion = async () => {
+    if (!permiso && !(await pedirPermiso())) {
+      return avisar({ tipo: 'error', titulo: 'Sin permiso', mensaje: 'Activa las notificaciones de FocusSync en los ajustes.' });
+    }
+    notificar({ tipo: 'logro', titulo: 'Notificación de prueba', mensaje: 'Así se verán tus logros y alertas de FocusSync.' });
   };
 
   return (
@@ -72,6 +101,10 @@ export default function ConfiguracionScreen() {
           </View>
           <Switch value={config.notificaciones_activas} onValueChange={(v) => actualizar({ notificaciones_activas: v })} trackColor={{ true: colores.verde, false: '#CFD5D1' }} thumbColor={colores.blanco} />
         </View>
+        <Pressable onPress={probarNotificacion} style={[estilos.fila, estilos.separador]}>
+          <Feather name="bell" size={21} color={colores.verde} />
+          <Text style={[estilos.titulo, { color: colores.verde }]}>Enviar notificación de prueba</Text>
+        </Pressable>
         <View style={{ paddingVertical: 14 }}>
           <View style={estilos.fila}>
             <Text style={[estilos.titulo, { flex: 1 }]}>Umbral de alerta</Text>
@@ -106,9 +139,21 @@ export default function ConfiguracionScreen() {
         </Pressable>
       </Tarjeta>
 
-      <Pressable onPress={cerrarSesion} style={estilos.salir}>
+      <Pressable onPress={pedirConfirmacionSalida} style={estilos.salir}>
         <Text style={estilos.salirTexto}>Cerrar sesión</Text>
       </Pressable>
+
+      <DialogoConfirmacion
+        visible={confirmandoSalida}
+        icono="log-out"
+        titulo="¿Cerrar sesión?"
+        mensaje="Tendrás que escribir tu correo y contraseña para volver a entrar."
+        textoConfirmar="Cerrar sesión"
+        peligroso
+        cargando={saliendo}
+        alConfirmar={confirmarSalida}
+        alCancelar={cancelarSalida}
+      />
     </Pantalla>
   );
 }

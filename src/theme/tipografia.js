@@ -8,6 +8,7 @@ export const fuentes = {
   media: 'Poppins_500Medium',
   seminegrita: 'Poppins_600SemiBold',
   negrita: 'Poppins_700Bold',
+  mono: 'JetBrainsMono', // cronómetro: la misma llave que se usa en useFonts (App.js)
 };
 
 export const texto = {

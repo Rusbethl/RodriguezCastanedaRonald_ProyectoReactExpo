@@ -16,3 +16,4 @@ export { default as AnalisisScreen } from './AnalisisScreen'; // 10
 export { default as MetasScreen } from './MetasScreen'; // 11
 export { default as NotificacionesScreen } from './NotificacionesScreen'; // 12
 export { default as LogrosScreen } from './LogrosScreen'; // 13
+export { default as MapaScreen } from './MapaScreen';

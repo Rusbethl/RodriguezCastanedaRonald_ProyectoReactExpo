@@ -5,12 +5,13 @@
  */
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Cargando, Chip, Encabezado, MensajeError, Pantalla, Tarjeta, Vacio } from '../components';
+import { Cargando, Chip, DialogoConfirmacion, Encabezado, MensajeError, Pantalla, Tarjeta, Vacio } from '../components';
 import { useDatos } from '../hooks';
+import { useNotificaciones } from '../notificaciones';
 import { materias as materiasApi, sesiones } from '../services';
-import { colores, fuentes } from '../theme';
+import { colores, fuentes, imagenes } from '../theme';
 import { etiquetaDia, hora } from '../utils';
 
 const COLOR_NIVEL = {
@@ -19,16 +20,6 @@ const COLOR_NIVEL = {
   Baja: { fondo: colores.coralSuave, texto: '#A2401F' },
 };
 
-function confirmar(mensaje) {
-  if (Platform.OS === 'web') return Promise.resolve(window.confirm(mensaje));
-  return new Promise((resolver) =>
-    Alert.alert('Borrar sesión', mensaje, [
-      { text: 'Cancelar', style: 'cancel', onPress: () => resolver(false) },
-      { text: 'Borrar', style: 'destructive', onPress: () => resolver(true) },
-    ]),
-  );
-}
-
 export default function HistorialScreen() {
   const [filtro, setFiltro] = useState(null);
   const { datos, setDatos, error, cargando, recargar, recargando } = useDatos(async () => {
@@ -36,6 +27,9 @@ export default function HistorialScreen() {
     return { pagina, lista: pagina.results, materias };
   }, [filtro]);
   const [cargandoMas, setCargandoMas] = useState(false);
+  const { avisar } = useNotificaciones();
+  const [porBorrar, setPorBorrar] = useState(null); // sesión que espera confirmación
+  const [borrando, setBorrando] = useState(false);
 
   if (cargando) return <Pantalla><Cargando /></Pantalla>;
   if (error) return <Pantalla><MensajeError mensaje={error} alReintentar={recargar} /></Pantalla>;
@@ -47,10 +41,19 @@ export default function HistorialScreen() {
     setCargandoMas(false);
   };
 
-  const borrar = async (sesion) => {
-    if (!(await confirmar(`¿Borrar la sesión de ${sesion.materia_nombre}? Tus estadísticas se recalculan.`))) return;
-    await sesiones.eliminar(sesion.id);
-    setDatos({ ...datos, lista: datos.lista.filter((s) => s.id !== sesion.id) });
+  // Mantener presionada una sesión solo abre el diálogo; borrar ocurre al confirmar
+  const confirmarBorrado = async () => {
+    setBorrando(true);
+    try {
+      await sesiones.eliminar(porBorrar.id);
+      setDatos({ ...datos, lista: datos.lista.filter((s) => s.id !== porBorrar.id) });
+      avisar({ tipo: 'exito', titulo: 'Sesión borrada' });
+    } catch (e) {
+      avisar({ tipo: 'error', titulo: 'No se pudo borrar', mensaje: e.message });
+    } finally {
+      setBorrando(false);
+      setPorBorrar(null);
+    }
   };
 
   const grupos = [];
@@ -70,7 +73,7 @@ export default function HistorialScreen() {
         ))}
       </View>
 
-      {grupos.length === 0 && <Vacio icono="clock" mensaje="Todavía no hay sesiones aquí. Empieza una desde Inicio." />}
+      {grupos.length === 0 && <Vacio imagen={imagenes.sinSesiones} mensaje="Todavía no hay sesiones aquí. Empieza una desde Inicio." />}
       {grupos.map((g) => (
         <View key={g.dia}>
           <Text style={estilos.dia}>{g.dia}</Text>
@@ -78,7 +81,7 @@ export default function HistorialScreen() {
             const nivel = COLOR_NIVEL[s.nivel_enfoque_nombre] ?? COLOR_NIVEL.Media;
             return (
               <Tarjeta key={s.id} estilo={estilos.tarjeta}>
-                <Pressable onLongPress={() => borrar(s)} delayLongPress={400}>
+                <Pressable onLongPress={() => setPorBorrar(s)} delayLongPress={400}>
                   <View style={estilos.fila}>
                     <View style={[estilos.punto, { backgroundColor: s.materia_color }]} />
                     <Text style={estilos.materia}>{s.materia_nombre}</Text>
@@ -105,6 +108,18 @@ export default function HistorialScreen() {
         </Pressable>
       )}
       {datos.lista.length > 0 && <Text style={estilos.ayuda}>Mantén presionada una sesión para borrarla.</Text>}
+
+      <DialogoConfirmacion
+        visible={!!porBorrar}
+        icono="trash-2"
+        titulo="Borrar sesión"
+        mensaje={porBorrar ? `¿Borrar la sesión de ${porBorrar.materia_nombre}? Tus estadísticas se recalculan.` : ''}
+        textoConfirmar="Borrar"
+        peligroso
+        cargando={borrando}
+        alConfirmar={confirmarBorrado}
+        alCancelar={() => setPorBorrar(null)}
+      />
     </Pantalla>
   );
 }

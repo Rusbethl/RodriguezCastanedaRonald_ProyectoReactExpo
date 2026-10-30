@@ -5,13 +5,14 @@
  * POST /api/sesiones/{id}/finalizar/. El backend actualiza racha, metas y logros.
  */
 import { Feather } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Boton, Cargando, Chip, Encabezado, MensajeError, Pantalla, Tarjeta } from '../components';
-import { useDatos } from '../hooks';
+import { useDatos, useSonido } from '../hooks';
+import { useNotificaciones } from '../notificaciones';
 import { catalogos, sesiones } from '../services';
-import { colores, fuentes } from '../theme';
+import { colores, fuentes, sonidos } from '../theme';
 import { porcentajePantalla } from '../utils';
 
 const CARAS = { Baja: 'frown', Media: 'meh', Alta: 'smile' };
@@ -29,6 +30,10 @@ export default function SesionTerminadaScreen({ navigation, route }) {
   const [guardando, setGuardando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [aviso, setAviso] = useState('');
+  const { avisar, notificar } = useNotificaciones();
+  const sonarGuardada = useSonido(sonidos.sesionGuardada);
+  const sonarLogro = useSonido(sonidos.logro);
+  const anunciado = useRef(false);
 
   const pct = porcentajePantalla(duracionEstudio, tiempoPantalla);
   const appsVisibles = useMemo(() => {
@@ -49,6 +54,18 @@ export default function SesionTerminadaScreen({ navigation, route }) {
   const ajustar = (id, delta) => setApps({ ...apps, [id]: Math.max(1, apps[id] + delta) });
   const ajustarPantalla = (delta) => setTiempoPantalla(Math.max(0, Math.min(duracionEstudio, tiempoPantalla + delta)));
 
+  // Avisos en orden: sesión guardada, logros, metas y alertas del servidor
+  const anunciar = (respuesta) => {
+    const r = respuesta.resultado;
+    if (anunciado.current) return;
+    anunciado.current = true;
+    (r.logros_nuevos.length ? sonarLogro : sonarGuardada)();
+    avisar({ tipo: 'exito', titulo: 'Sesión guardada', mensaje: `Se registraron ${respuesta.duracion_estudio ?? duracionEstudio} min de estudio.` });
+    r.logros_nuevos.forEach((l) => notificar({ tipo: 'logro', titulo: '¡Nuevo logro!', mensaje: `Desbloqueaste "${l}".` }));
+    r.metas_cumplidas.forEach((m) => notificar({ tipo: 'logro', titulo: 'Meta cumplida', mensaje: m }));
+    r.alertas.forEach((a) => notificar({ tipo: 'alerta', titulo: 'Alerta de distracción', mensaje: a }));
+  };
+
   const guardar = async () => {
     if (!nivel) return setAviso('Elige cómo sentiste tu concentración.');
     setGuardando(true);
@@ -62,6 +79,7 @@ export default function SesionTerminadaScreen({ navigation, route }) {
         apps: Object.entries(apps).map(([app, minutos_uso]) => ({ app: Number(app), minutos_uso })),
       });
       setResultado(respuesta.resultado);
+      anunciar(respuesta);
     } catch (e) {
       setAviso(e.message);
     } finally {

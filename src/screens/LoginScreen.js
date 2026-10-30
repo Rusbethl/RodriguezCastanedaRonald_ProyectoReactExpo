@@ -3,14 +3,13 @@
  * Autentica con correo y contraseña contra POST /api/auth/login/. Los errores de la
  * API (correo o contraseña incorrectos, cuenta inactiva) se muestran en pantalla.
  */
-import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Boton, Campo, Pantalla } from '../components';
 import { useAuth } from '../context';
 import { auth } from '../services';
-import { colores, fuentes } from '../theme';
+import { colores, fuentes, imagenes } from '../theme';
 
 export default function LoginScreen({ navigation }) {
   const { iniciarSesion } = useAuth();
@@ -47,9 +46,7 @@ export default function LoginScreen({ navigation }) {
     <Pantalla fondo={colores.verde} bordes={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={estilos.logo}>
-          <View style={estilos.icono}>
-            <Feather name="feather" size={34} color={colores.verde} />
-          </View>
+          <Image source={imagenes.logo} style={estilos.icono} accessibilityLabel="Logo de FocusSync" />
           <Text style={estilos.marca}>FocusSync</Text>
           <Text style={estilos.lema}>Estudia de verdad. Mide lo que el celular te quita.</Text>
         </View>
@@ -94,7 +91,7 @@ export default function LoginScreen({ navigation }) {
 
 const estilos = StyleSheet.create({
   logo: { alignItems: 'center', marginTop: 56, marginBottom: 48 },
-  icono: { width: 72, height: 72, borderRadius: 24, backgroundColor: colores.lima, alignItems: 'center', justifyContent: 'center' },
+  icono: { width: 72, height: 72 },
   marca: { fontFamily: fuentes.seminegrita, fontSize: 34, color: colores.crema, marginTop: 14 },
   lema: { fontFamily: fuentes.regular, fontSize: 14, color: colores.crema, opacity: 0.75, textAlign: 'center', marginTop: 4 },
   olvide: { alignSelf: 'flex-end', marginTop: -4, marginBottom: 24 },

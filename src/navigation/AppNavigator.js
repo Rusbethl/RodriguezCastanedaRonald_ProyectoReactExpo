@@ -23,6 +23,7 @@ import {
   InicioScreen,
   LoginScreen,
   LogrosScreen,
+  MapaScreen,
   MateriasScreen,
   MetasScreen,
   NotificacionesScreen,
@@ -95,6 +96,7 @@ export default function AppNavigator() {
             <Pila.Screen name="Metas" component={MetasScreen} />
             <Pila.Screen name="Notificaciones" component={NotificacionesScreen} />
             <Pila.Screen name="Logros" component={LogrosScreen} />
+            <Pila.Screen name="Mapa" component={MapaScreen} />
             <Pila.Screen name="Configuracion" component={ConfiguracionScreen} />
           </>
         )}

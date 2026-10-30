@@ -30,6 +30,10 @@ Para probar en el navegador de la computadora: `npx expo start --web` (ahí sí 
 
 Usuario de prueba (se crea con `python manage.py cargar_demo`): `demo@focussync.app` / `FocusSync2026`.
 
+### Mapa de estudio
+
+En Perfil → Mapa de estudio la app pide permiso de ubicación (`expo-location`) y muestra dónde estás. En Android e iOS usa `react-native-maps` (se puede tocar el mapa para marcar un punto y ver a cuántos metros queda); en el navegador incrusta el mapa de OpenStreetMap. Para una compilación propia de Android se puede definir `GOOGLE_MAPS_API_KEY` en el entorno; en Expo Go no hace falta.
+
 ### Cómo se mide el uso del celular
 
 Expo Go no permite leer las estadísticas de uso de otras apps. La app usa `AppState`: cada vez que sales de FocusSync durante una sesión cuenta como un desbloqueo y el tiempo fuera se suma al tiempo en el celular. Al terminar, el usuario puede corregir el tiempo y marcar qué apps usó.
@@ -41,7 +45,7 @@ Expo Go no permite leer las estadísticas de uso de otras apps. La app usa `AppS
 ├── index.js            Punto de entrada que registra App en Expo
 ├── app.config.js       Configuración de Expo (nombre, íconos, colores, URL de la API)
 ├── .env.example        Variables de entorno de ejemplo (el .env real no se sube)
-├── assets/             Íconos y splash de la app
+├── assets/             Íconos, splash, imágenes, fuente del cronómetro y sonidos
 └── src/
     ├── screens/        Una pantalla completa por archivo (las 13 del diseño)
     ├── components/     Piezas visuales reutilizables (botones, campos, tarjetas)
@@ -49,7 +53,8 @@ Expo Go no permite leer las estadísticas de uso de otras apps. La app usa `AppS
     ├── services/       Llamadas a la API de Django REST Framework
     ├── context/        Estado global (sesión del usuario)
     ├── hooks/          Lógica reutilizable (cronómetro, tiempo en pantalla)
-    ├── theme/          Colores y medidas del diseño
+    ├── notificaciones/ Avisos dentro de la app y notificaciones del sistema
+    ├── theme/          Colores, tipografía y registro de recursos
     └── utils/          Funciones de formato y cálculo
 ```
 
@@ -60,3 +65,6 @@ Expo Go no permite leer las estadísticas de uso de otras apps. La app usa `AppS
 - [x] Inicio de sesión, registro en dos pasos y cierre de sesión
 - [x] Sesiones de estudio con cronómetro, pausas y medición del celular
 - [x] Historial, materias, análisis semanal, metas, notificaciones, logros y configuración
+- [x] Diálogo de confirmación antes de cerrar sesión y de borrar una sesión
+- [x] Sistema de avisos (en la app y del sistema), con recursos propios: logo, fuente del cronómetro y sonidos
+- [x] Mapa de estudio con la ubicación actual

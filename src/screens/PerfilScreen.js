@@ -17,6 +17,7 @@ const MENU = [
   { icono: 'book', texto: 'Mis materias', ruta: 'Materias' },
   { icono: 'target', texto: 'Mis metas', ruta: 'Metas' },
   { icono: 'award', texto: 'Logros y racha', ruta: 'Logros' },
+  { icono: 'map-pin', texto: 'Mapa de estudio', ruta: 'Mapa' },
   { icono: 'settings', texto: 'Configuración', ruta: 'Configuracion' },
 ];
 

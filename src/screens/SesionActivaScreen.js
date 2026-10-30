@@ -9,8 +9,9 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, Vibration, View } from 'react-native';
 
 import { Anillo, Boton, Pantalla } from '../components';
-import { useMedicionCelular } from '../hooks';
-import { colores, fuentes } from '../theme';
+import { useMedicionCelular, useSonido } from '../hooks';
+import { useNotificaciones } from '../notificaciones';
+import { colores, fuentes, sonidos } from '../theme';
 import { hora, reloj } from '../utils';
 
 export default function SesionActivaScreen({ navigation, route }) {
@@ -22,6 +23,8 @@ export default function SesionActivaScreen({ navigation, route }) {
   const [segundosPausa, setSegundosPausa] = useState(0);
   const avisado = useRef(false);
   const celular = useMedicionCelular(!pausado);
+  const { avisar, programar, cancelar } = useNotificaciones();
+  const sonarFin = useSonido(sonidos.finSesion);
 
   useEffect(() => {
     const intervalo = setInterval(() => setAhora(Date.now()), 1000);
@@ -35,10 +38,30 @@ export default function SesionActivaScreen({ navigation, route }) {
   // Aviso al llegar al tiempo elegido (la sesión no se corta sola: el usuario decide)
   useEffect(() => {
     if (total && transcurrido >= total && !avisado.current) {
-      avisado.current = true;
+      avisado.current = true; // para que suene una sola vez
       Vibration.vibrate([0, 400, 200, 400]);
+      sonarFin();
+      avisar({ tipo: 'sesion', titulo: '¡Tiempo cumplido!', mensaje: `Completaste ${duracion} min de estudio. Termina la sesión cuando quieras.` });
     }
-  }, [total, transcurrido]);
+  }, [total, transcurrido, sonarFin, avisar, duracion]);
+
+  // Notificación del sistema para el minuto exacto en que se cumple el tiempo, aunque la
+  // app esté en segundo plano. Si el usuario pausa, termina o sale de la pantalla se
+  // cancela; al reanudar se programa otra con el tiempo que falta.
+  const restante = useRef(0);
+  restante.current = total ? total - transcurrido : 0;
+  useEffect(() => {
+    if (pausado || !total || restante.current <= 0) return undefined;
+    const id = programar({
+      tipo: 'sesion',
+      titulo: '¡Tiempo cumplido!',
+      mensaje: `Completaste ${duracion} min de estudio de ${sesion.materia_nombre}.`,
+      enSegundos: restante.current,
+    });
+    return () => {
+      id.then(cancelar);
+    };
+  }, [pausado, total, programar, cancelar, duracion, sesion.materia_nombre]);
 
   const alternarPausa = () => {
     if (pausado) {
@@ -119,7 +142,7 @@ const estilos = StyleSheet.create({
   chipTexto: { fontFamily: fuentes.media, fontSize: 12.5, color: colores.crema },
   punto: { width: 9, height: 9, borderRadius: 5 },
   reloj: { alignItems: 'center', marginTop: 34 },
-  tiempo: { fontFamily: fuentes.seminegrita, fontSize: 50, color: colores.crema, letterSpacing: 1 },
+  tiempo: { fontFamily: fuentes.mono, fontSize: 52, color: colores.crema, letterSpacing: 1 },
   deTotal: { fontFamily: fuentes.regular, fontSize: 13.5, color: colores.crema, opacity: 0.7 },
   horas: { fontFamily: fuentes.regular, fontSize: 13, color: colores.crema, opacity: 0.7, textAlign: 'center', marginTop: 18, marginBottom: 22 },
   metricas: { flexDirection: 'row', gap: 12 },

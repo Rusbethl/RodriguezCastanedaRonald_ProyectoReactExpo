@@ -4,3 +4,5 @@
  */
 export { default as useDatos } from './useDatos';
 export { default as useMedicionCelular } from './useMedicionCelular';
+export { default as useSonido } from './useSonido';
+export { default as useUbicacion } from './useUbicacion';

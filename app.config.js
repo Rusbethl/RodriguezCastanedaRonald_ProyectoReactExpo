@@ -39,14 +39,24 @@ export default {
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
       },
+      // Clave de Google Maps (solo para compilaciones propias de Android; en Expo Go no hace falta).
+      // Se lee de GOOGLE_MAPS_API_KEY para no dejarla escrita en el repositorio.
+      ...(process.env.GOOGLE_MAPS_API_KEY ? { config: { googleMaps: { apiKey: process.env.GOOGLE_MAPS_API_KEY } } } : {}),
     },
 
     web: {
       favicon: './assets/favicon.png',
     },
 
-    // Plugins nativos: guardar el token de forma cifrada y cargar la tipografía Poppins.
-    plugins: ['expo-secure-store', 'expo-font'],
+    // Plugins nativos: guardar el token de forma cifrada, cargar la tipografía, avisos del
+    // sistema (permiso en Android 13+, color del ícono y canal por defecto), sonidos y ubicación.
+    plugins: [
+      'expo-secure-store',
+      'expo-font',
+      ['expo-notifications', { color: '#0B4A3B', defaultChannel: 'focussync-sesiones' }],
+      'expo-audio',
+      ['expo-location', { locationWhenInUsePermission: 'FocusSync usa tu ubicación para mostrarte en el mapa de estudio.' }],
+    ],
 
     // 'extra' expone valores al código mediante expo-constants.
     // La URL del backend (Django REST Framework) se toma del archivo .env para no
